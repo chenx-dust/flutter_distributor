@@ -39,13 +39,13 @@ Future<void> main(List<String> args) async {
     }
   }
 
-  if (argResults['version-check']) {
-    logger.info('Checking version');
-    // Check version of flutter_distributor on every run
-    if (!await distributor.checkVersion()) {
-      logger.info('Up to date');
-    }
-  }
+  // if (argResults['version-check']) {
+  //   logger.info('Checking version');
+  //   // Check version of flutter_distributor on every run
+  //   if (!await distributor.checkVersion()) {
+  //     logger.info('Up to date');
+  //   }
+  // }
 
   return runner.runCommand(argResults);
 }
