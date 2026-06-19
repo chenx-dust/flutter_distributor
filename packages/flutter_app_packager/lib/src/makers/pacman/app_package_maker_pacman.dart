@@ -13,7 +13,7 @@ class AppPackageMakerPacman extends AppPackageMaker {
   @override
   bool get isSupportedOnCurrentPlatform => Platform.isLinux;
   @override
-  String get packageFormat => 'pacman';
+  String get packageFormat => 'tar.zst';
 
   @override
   MakeConfigLoader get configLoader {
@@ -145,7 +145,7 @@ class AppPackageMakerPacman extends AppPackageMaker {
     }
 
     // create the pacman package using fakeroot and bsdtar
-    // fakeroot -- env LANG=C bsdtar -cf - .MTREE .PKGINFO * | xz -c -z - > $pkgname-$pkgver-$pkgrel-$arch.tar.xz
+    // fakeroot -- env LANG=C bsdtar -cf - .MTREE .PKGINFO * | zstd - > $pkgname-$pkgver-$pkgrel-$arch.tar.xz
 
     ProcessResult archiveResult = await $(
       'bsdtar',
@@ -167,9 +167,8 @@ class AppPackageMakerPacman extends AppPackageMaker {
     }
 
     ProcessResult processResult = await $(
-      'xz',
+      'zstd',
       [
-        '-z',
         'temptar',
       ],
       workingDirectory: packagingDirectory.path,
@@ -179,11 +178,11 @@ class AppPackageMakerPacman extends AppPackageMaker {
       throw MakeError(processResult.stderr);
     }
 
-    // copy file from temptar.xz to the makeConfig.outputFile.path
+    // copy file from temptar.zst to the makeConfig.outputFile.path
     final copyResult = await $(
       'mv',
       [
-        '${packagingDirectory.path}/temptar.xz',
+        '${packagingDirectory.path}/temptar.zst',
         makeConfig.outputFile.path,
       ],
     );
