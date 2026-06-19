@@ -25,6 +25,7 @@ class MakeRPMConfig extends MakeConfig {
     this.license,
     this.url,
     this.buildArch,
+    this.autoReq = true,
     this.requires,
     this.buildRequires,
     this.description,
@@ -59,6 +60,7 @@ class MakeRPMConfig extends MakeConfig {
       license: json['license'] as String?,
       url: json['url'] as String?,
       buildArch: json['build_arch'] as String? ?? _getArchitecture(),
+      autoReq: json['auto_req'] as bool? ?? true,
       requires: (json['requires'] as List<dynamic>?)?.cast<String>(),
       buildRequires: (json['build_requires'] as List<dynamic>?)?.cast<String>(),
       description: json['description'] as String?,
@@ -93,6 +95,7 @@ class MakeRPMConfig extends MakeConfig {
   String? license;
   String? url;
   String? buildArch;
+  bool autoReq;
   List<String>? requires;
   List<String>? buildRequires;
   //RPM postamble Spec file fields
@@ -122,6 +125,7 @@ class MakeRPMConfig extends MakeConfig {
               packagerEmail != null ? '$packager <$packagerEmail>' : packager,
           'License': license,
           'URL': url,
+          'AutoReq': autoReq ? null : 'no',
           'Requires': requires?.join(', '),
           'BuildRequires': buildRequires?.join(', '),
           'BuildArch': buildArch ?? _getArchitecture(),
