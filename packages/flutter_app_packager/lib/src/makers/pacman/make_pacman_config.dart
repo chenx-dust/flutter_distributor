@@ -321,7 +321,7 @@ class MakePacmanConfigLoader extends DefaultMakeConfigLoader {
       buildOutputFiles: buildOutputFiles,
     );
     final map = loadMakeConfigYaml(
-      '$platform/packaging/$packageFormat/make_config.yaml',
+      '$platform/packaging/pacman/make_config.yaml',
     );
     return MakePacmanConfig.fromJson(map).copyWith(baseMakeConfig);
   }
