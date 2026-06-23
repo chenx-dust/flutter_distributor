@@ -24,34 +24,34 @@ maintainer:
 installed_size: 24400
 
 # direct dependencies required by the application
-# refer: https://man.archlinux.org/man/PKGBUILD.5#OPTIONS_AND_DIRECTIVES
+# refer: https://man.archlinux.org/man/PKGINFO.5#depend
 dependencies:
   - mysupercooldep
 
 # optional dependencies not so much required by the application
-# refer: https://man.archlinux.org/man/PKGBUILD.5#OPTIONS_AND_DIRECTIVES
+# refer: https://man.archlinux.org/man/PKGINFO.5#optdepend
 optional_dependencies:
   - iamalwaysoptional
 
-# refer: https://man.archlinux.org/man/PKGBUILD.5#OPTIONS_AND_DIRECTIVES
+# refer: https://man.archlinux.org/man/PKGINFO.5#provides
 provides:
   - whatsup
 
-# refer: https://man.archlinux.org/man/PKGBUILD.5#OPTIONS_AND_DIRECTIVES
-options:
-  - zipman
-
-# refer: https://man.archlinux.org/man/PKGBUILD.5#OPTIONS_AND_DIRECTIVES
+# refer: https://man.archlinux.org/man/PKGINFO.5#conflict
 conflicts:
   - libwhatsup
 
-# refer: https://man.archlinux.org/man/PKGBUILD.5#OPTIONS_AND_DIRECTIVES
+# refer: https://man.archlinux.org/man/PKGINFO.5#replaces
 replaces:
   - yourdep
 
-# refer: https://man.archlinux.org/man/PKGBUILD.5#OPTIONS_AND_DIRECTIVES
+# refer: https://man.archlinux.org/man/PKGINFO.5#provides
 provides:
   - libx11
+
+# refer: https://man.archlinux.org/man/PKGINFO.5#backup
+backups:
+  - etc/myapp/config.yaml
 
 postinstall_scripts:
   - echo `Installed my awesome app`
@@ -109,7 +109,6 @@ class MakePacmanConfig extends MakeLinuxPackageConfig {
     this.dependencies,
     this.genericName,
     this.optDependencies,
-    this.options,
     this.startupNotify = false,
     this.startupWMClass,
     this.groups = const ['default'],
@@ -118,6 +117,7 @@ class MakePacmanConfig extends MakeLinuxPackageConfig {
     this.metainfo,
     this.keywords,
     this.provides,
+    this.backups,
     this.conflicts,
     this.replaces,
     this.supportedMimeType,
@@ -141,9 +141,6 @@ class MakePacmanConfig extends MakeLinuxPackageConfig {
       replaces: map['replaces'] != null
           ? List.castFrom<dynamic, String>(map['replaces'])
           : null,
-      options: map['options'] != null
-          ? List.castFrom<dynamic, String>(map['options'])
-          : null,
       optDependencies: map['optional_dependencies'] != null
           ? List.castFrom<dynamic, String>(map['optional_dependencies'])
           : null,
@@ -155,6 +152,9 @@ class MakePacmanConfig extends MakeLinuxPackageConfig {
           : ['default'],
       provides: map['provides'] != null
           ? List.castFrom<dynamic, String>(map['provides'])
+          : null,
+      backups: map['backups'] != null
+          ? List.castFrom<dynamic, String>(map['backups'])
           : null,
       postinstallScripts: map['postinstall_scripts'] != null
           ? List.castFrom<dynamic, String>(map['postinstall_scripts'])
@@ -198,12 +198,12 @@ class MakePacmanConfig extends MakeLinuxPackageConfig {
   String? genericName;
   bool startupNotify;
   String? startupWMClass;
-  List<String>? options;
   List<String>? dependencies;
   List<String>? optDependencies;
   List<String>? conflicts;
   List<String>? replaces;
   List<String>? provides;
+  List<String>? backups;
   List<String> _postinstallScripts;
   List<String> _postupgradeScripts;
   List<String> _postremoveScripts;
@@ -230,22 +230,23 @@ class MakePacmanConfig extends MakeLinuxPackageConfig {
     return {
       'PKGINFO': {
         'pkgname': packageName,
-        'pkgver': appVersion.toString(),
+        'pkgbase': packageName,
+        'xdata': 'pkgtype=pkg',
+        'pkgver':
+            "${appVersion.toString().replaceAll('-', '_')}-$packageRelease",
         'pkgdesc': pubspec.description,
+        'url': pubspec.homepage,
         'packager': maintainer,
         'size': installedSize,
-        'license': '(${licenses.join(', ')})',
-        'groups': '(${groups.join(', ')})',
-        'arch': '(${_getArchitecture()})',
-        'url': pubspec.homepage,
-        'options': options != null ? "(${options!.join(', ')})" : null,
-        'depends':
-            dependencies != null ? "(${dependencies!.join(', ')})" : null,
-        'optdepends':
-            optDependencies != null ? "(${optDependencies!.join(', ')})" : null,
-        'conflicts': conflicts != null ? "(${conflicts!.join(', ')})" : null,
-        'replaces': replaces != null ? "(${replaces!.join(', ')})" : null,
-        'provides': provides != null ? "(${provides!.join(', ')})" : null,
+        'arch': _getArchitecture(),
+        'license': licenses,
+        'replaces': replaces,
+        'group': groups,
+        'conflict': conflicts,
+        'provides': provides,
+        'backup': backups,
+        'depend': dependencies,
+        'optdepend': optDependencies,
       }..removeWhere((key, value) => value == null),
       'DESKTOP': {
         'Type': 'Application',
@@ -275,9 +276,13 @@ class MakePacmanConfig extends MakeLinuxPackageConfig {
   Map<String, String> toFilesString() {
     final json = toJson();
     final pkginfoFile =
-        '${(json['PKGINFO'] as Map<String, dynamic>).entries.map(
-              (e) => '${e.key}=${e.value}',
-            ).join('\n')}\n';
+        '${(json['PKGINFO'] as Map<String, dynamic>).entries.expand(
+      (entry) {
+        final value = entry.value;
+        final values = value is Iterable ? value : [value];
+        return values.map((item) => '${entry.key} = $item');
+      },
+    ).join('\n')}\n';
     final installFileMap = {
       'post_install': postinstallScripts.join('\n\t'),
       'post_upgrade':
