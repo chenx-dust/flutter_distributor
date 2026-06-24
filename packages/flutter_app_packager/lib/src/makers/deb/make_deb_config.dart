@@ -28,7 +28,8 @@ priority: optional
 # refer: https://www.debian.org/doc/debian-policy/ch-archive.html#s-subsections
 section: x11
 
-# the size of binary in kilobyte
+# the installed package size in kilobytes. If omitted, it is calculated
+# automatically from the package payload.
 installed_size: 24400
 
 # direct dependencies required by the application
@@ -123,7 +124,7 @@ class MakeDebConfig extends MakeLinuxPackageConfig {
   MakeDebConfig({
     required this.displayName,
     required this.packageName,
-    required this.installedSize,
+    this.installedSize,
     required this.maintainer,
     this.startupNotify = true,
     this.startupWMClass,
@@ -231,7 +232,7 @@ class MakeDebConfig extends MakeLinuxPackageConfig {
   String maintainer;
   String priority;
   String section;
-  int installedSize;
+  int? installedSize;
   bool? essential;
   String? icon;
   String? metainfo;

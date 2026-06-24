@@ -20,7 +20,8 @@ maintainer:
   name: Gamer Boy 69
   email: rickastley@gmail.lol
 
-# the size of binary in kilobyte
+# the installed package size in bytes. If omitted, it is calculated
+# automatically from the package payload.
 installed_size: 24400
 
 # direct dependencies required by the application

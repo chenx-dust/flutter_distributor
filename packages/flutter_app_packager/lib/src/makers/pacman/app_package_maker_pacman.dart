@@ -36,8 +36,6 @@ class AppPackageMakerPacman extends AppPackageMaker {
     required Directory outputDirectory,
     required MakePacmanConfig makeConfig,
   }) async {
-    final files = makeConfig.toFilesString();
-
     Directory packagingDirectory = makeConfig.packagingDirectory;
 
     /// Need to create following directories
@@ -112,8 +110,8 @@ class AppPackageMakerPacman extends AppPackageMaker {
     if (!pkgInfoFile.existsSync()) pkgInfoFile.createSync();
     if (!desktopEntryFile.existsSync()) desktopEntryFile.createSync();
 
+    var files = makeConfig.toFilesString();
     await installFile.writeAsString(files['INSTALL']!);
-    await pkgInfoFile.writeAsString(files['PKGINFO']!);
     await desktopEntryFile.writeAsString(files['DESKTOP']!);
 
     // copy the application binary to /usr/share/$appBinaryName
@@ -122,6 +120,12 @@ class AppPackageMakerPacman extends AppPackageMaker {
       '${appDirectory.path}/.',
       '${packagingDirectory.path}/usr/share/${makeConfig.appBinaryName}/',
     ]);
+
+    makeConfig.installedSize = makeConfig.installedSizeInBytes(
+      Directory(path.join(packagingDirectory.path, 'usr')),
+    );
+    files = makeConfig.toFilesString();
+    await pkgInfoFile.writeAsString(files['PKGINFO']!);
 
     // MTREE Metadata using bsdtar and fakeroot
     ProcessResult mtreeResult = await $(

@@ -36,8 +36,6 @@ class AppPackageMakerDeb extends AppPackageMaker {
     required Directory outputDirectory,
     required MakeDebConfig makeConfig,
   }) async {
-    final files = makeConfig.toFilesString();
-
     Directory packagingDirectory = makeConfig.packagingDirectory;
 
     /// Need to create following directories
@@ -117,7 +115,7 @@ class AppPackageMakerDeb extends AppPackageMaker {
     if (!postrmFile.existsSync()) postrmFile.createSync();
     if (!desktopEntryFile.existsSync()) desktopEntryFile.createSync();
 
-    await controlFile.writeAsString(files['CONTROL']!);
+    var files = makeConfig.toFilesString();
     await desktopEntryFile.writeAsString(files['DESKTOP']!);
     await postinstFile.writeAsString(files['postinst']!);
     await postrmFile.writeAsString(files['postrm']!);
@@ -131,6 +129,12 @@ class AppPackageMakerDeb extends AppPackageMaker {
       '${appDirectory.path}/.',
       '${packagingDirectory.path}/usr/share/${makeConfig.appBinaryName}/',
     ]);
+
+    makeConfig.installedSize = makeConfig.installedSizeInKilobytes(
+      Directory(path.join(packagingDirectory.path, 'usr')),
+    );
+    files = makeConfig.toFilesString();
+    await controlFile.writeAsString(files['CONTROL']!);
 
     ProcessResult processResult = await $('dpkg-deb', [
       '--build',

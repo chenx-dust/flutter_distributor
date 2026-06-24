@@ -216,4 +216,23 @@ class MakeLinuxPackageConfig extends MakeConfig {
     }
     return _appBinaryName!;
   }
+
+  int installedSizeInBytes(Directory directory) {
+    var size = 0;
+    if (!directory.existsSync()) return size;
+
+    for (final entity in directory.listSync(recursive: true)) {
+      final stat = entity.statSync();
+      if (stat.type == FileSystemEntityType.file ||
+          stat.type == FileSystemEntityType.link) {
+        size += stat.size;
+      }
+    }
+    return size;
+  }
+
+  int installedSizeInKilobytes(Directory directory) {
+    final bytes = installedSizeInBytes(directory);
+    return (bytes / 1024).ceil();
+  }
 }
