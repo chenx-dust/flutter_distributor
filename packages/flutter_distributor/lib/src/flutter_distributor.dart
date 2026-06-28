@@ -184,8 +184,7 @@ class FlutterDistributor {
             'channel': channel,
             'artifact_name': artifactName,
             'description': description,
-            if (Platform.isWindows)
-              'arch': (buildResult as BuildWindowsResult).arch,
+            if (buildResult is BuildWindowsResult) 'arch': buildResult.arch,
           };
           MakeResult makeResult = await _packager.package(
             platform,
