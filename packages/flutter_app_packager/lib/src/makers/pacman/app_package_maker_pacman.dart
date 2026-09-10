@@ -127,13 +127,24 @@ class AppPackageMakerPacman extends AppPackageMaker {
     files = makeConfig.toFilesString();
     await pkgInfoFile.writeAsString(files['PKGINFO']!);
 
-    // MTREE Metadata using bsdtar and fakeroot
+    final permissionsResult = await $('chmod', [
+      '-R',
+      'u=rwX,go=rX',
+      packagingDirectory.path,
+    ]);
+    if (permissionsResult.exitCode != 0) {
+      throw MakeError(permissionsResult.stderr);
+    }
+
+    // Keep ownership identical in the payload and pacman's verification metadata.
+    const ownershipArguments = ['--uid', '0', '--gid', '0'];
     ProcessResult mtreeResult = await $(
       'bsdtar',
       [
         '-czf',
         '.MTREE',
         '--format=mtree',
+        ...ownershipArguments,
         '--options=!all,use-set,type,uid,gid,mode,time,size,md5,sha256,link',
         '.PKGINFO',
         '.INSTALL',
@@ -148,14 +159,20 @@ class AppPackageMakerPacman extends AppPackageMaker {
       throw MakeError(mtreeResult.stderr);
     }
 
-    // create the pacman package using fakeroot and bsdtar
-    // fakeroot -- env LANG=C bsdtar -cf - .MTREE .PKGINFO * | zstd - > $pkgname-$pkgver-$pkgrel-$arch.tar.xz
+    final mtreePermissionsResult = await $('chmod', [
+      '644',
+      path.join(packagingDirectory.path, '.MTREE'),
+    ]);
+    if (mtreePermissionsResult.exitCode != 0) {
+      throw MakeError(mtreePermissionsResult.stderr);
+    }
 
     ProcessResult archiveResult = await $(
       'bsdtar',
       [
         '-cf',
         'temptar',
+        ...ownershipArguments,
         '.MTREE',
         '.INSTALL',
         '.PKGINFO',
